@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Word Similarity Game</title>
+</head>
+<body>
+  <h1>Word Similarity Game</h1>
+  <div>
+    <p>Start Word: <span id="start-word"></span></p>
+    <p>End Word: <span id="end-word"></span></p>
+  </div>
+  <div>
+    <input type="text" id="user-word" placeholder="Enter a word">
+    <button onclick="checkWord()">Check Word</button>
+  </div>
+  <div>
+    <p>Similarity to Start Word: <span id="similarity-start"></span></p>
+    <p>Similarity to End Word: <span id="similarity-end"></span></p>
+  </div>
+  <button onclick="startGame()">Start New Game</button>
+
+  <script>
+    function startGame() {
+      fetch('http://localhost:5000/start_game')
+        .then(response => response.json())
+        .then(data => {
+          localStorage.setItem('startWord', data.start_word);
+          localStorage.setItem('endWord', data.end_word);
+          document.getElementById('start-word').textContent = data.start_word;
+          document.getElementById('end-word').textContent = data.end_word;
+          document.getElementById('similarity-start').textContent = '';
+          document.getElementById('similarity-end').textContent = '';
+        })
+        .catch(error => {
+          console.error('Error starting game:', error);
+        });
+    }
+
+    function checkWord() {
+      const userWord = document.getElementById('user-word').value;
+      const startWord = localStorage.getItem('startWord');
+      const endWord = localStorage.getItem('endWord');
+
+      if (!startWord || !endWord) {
+        console.error('Start word and end word not found.');
+        return;
+      }
+
+      fetch(`http://localhost:5000/check_word?user_word=${userWord}&start_word=${startWord}&end_word=${endWord}`)
+        .then(response => {
+          if (!response.ok) {
+            return response.json().then(data => {
+              throw new Error(`${response.status}: ${data.error}`);
+            });
+          }
+          return response.json();
+        })
+        .then(data => {
+          const similarityStart = data.similarity_to_start;
+          const similarityEnd = data.similarity_to_end;
+          document.getElementById('similarity-start').textContent = similarityStart;
+          document.getElementById('similarity-end').textContent = similarityEnd;
+        })
+        .catch(error => {
+          console.error('Error checking word:', error.message);
+        });
+    }
+
+    // Start a new game when the page loads
+    startGame();
+  </script>
+</body>
+</html>
